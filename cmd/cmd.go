@@ -1,23 +1,9 @@
 package main
 
 import (
+	"github.com/urfave/cli"
 	"os"
 )
-
-var Commands = []cli.Command{
-	commandClient,
-}
-
-var commandClient = cli.Command{
-	Name:        "client",
-	Usage:       "usage",
-	Description: "desc",
-	Action:      doClient,
-}
-
-func doClient(c *cli.Context) {
-	client.ConnectServer()
-}
 
 var Version string = "0.9.0"
 
@@ -32,6 +18,8 @@ func newApp() *cli.App {
 	app.Version = Version
 	app.Author = "takutakahashi"
 	app.Email = "taku.takahashi120@gmail.com"
-	app.Commands = Commands
+	app.Action = func(c *cli.Context) error {
+		return nil
+	}
 	return app
 }
