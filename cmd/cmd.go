@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"github.com/mholt/archiver"
 	"github.com/urfave/cli"
-	"io/ioutil"
 	"os"
-	"path/filepath"
+  "github.com/docker/docker/pkg/archive"
+  "github.com/docker/docker/builder/dockerignore"
+  "io"
+  "fmt"
 )
 
 var Version string = "0.9.0"
@@ -23,33 +23,29 @@ func newApp() *cli.App {
 	app.Author = "takutakahashi"
 	app.Email = "taku.takahashi120@gmail.com"
 	app.Action = func(c *cli.Context) error {
-		return makeTar(c.Args().Get(0))
+    fmt.Println("start app")
+		return makeTar(".", c.Args().Get(0))
 	}
 	return app
 }
 
-func makeTar(archivePath string) error {
-	tarPath := archivePath + ".tar"
-	tar := archiver.NewTar()
-	filePaths := getFileDirList(archivePath)
-	fmt.Println(filePaths)
-	tar.Archive(filePaths, tarPath)
+func makeTar(dir string, ignore string) error {
+  f, err := os.Open(ignore)
+  if err != nil {
+    panic(err)
+  }
+  defer f.Close()
+  ignorePatterns, err := dockerignore.ReadAll(f)
+  tarStream, err := archive.TarWithOptions(dir, &archive.TarOptions{
+    ExcludePatterns: ignorePatterns,
+    Compression: archive.Uncompressed})
+  if err != nil {
+    panic(err)
+  }
+  defer tarStream.Close()
+  outputFile, err := os.Create("context")
+  defer outputFile.Close()
+  io.Copy(outputFile, tarStream)
 	return nil
 }
 
-func getFileDirList(path string) []string {
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		panic(err)
-	}
-	var paths []string
-	for _, file := range files {
-		if file.IsDir() {
-			paths = append(paths, getFileDirList(filepath.Join(path, file.Name()))...)
-			continue
-		} else {
-			paths = append(paths, filepath.Join(path, file.Name()))
-		}
-	}
-	return paths
-}
