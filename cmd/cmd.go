@@ -23,16 +23,22 @@ func newApp() *cli.App {
 	app.Author = "takutakahashi"
 	app.Email = "taku.takahashi120@gmail.com"
 	app.Action = func(c *cli.Context) error {
-    fmt.Println("start app")
-		return makeTar(".", c.Args().Get(0))
+		return makeTar(c.Args().Get(0), c.Args().Get(1))
 	}
 	return app
 }
 
 func makeTar(dir string, ignore string) error {
+  if dir == "" {
+    dir = "."
+  }
+  if ignore == "" {
+    ignore = ".dockerignore"
+  }
   f, err := os.Open(ignore)
   if err != nil {
-    panic(err)
+    fmt.Println(err)
+    os.Exit(1)
   }
   defer f.Close()
   ignorePatterns, err := dockerignore.ReadAll(f)
